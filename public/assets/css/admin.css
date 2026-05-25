@@ -26,7 +26,7 @@ a:hover { text-decoration: underline; }
 .admin-logo { color: #fff; display: flex; align-items: center; gap: 12px; font-weight: 900; font-size: 20px; line-height: 1.1; text-decoration: none; }
 .admin-logo:hover { text-decoration: none; }
 .admin-logo small { color: #b8e0ee; font-size: 12px; font-weight: 700; }
-.admin-logo__mark { width: 54px; height: 54px; display: block; object-fit: contain; filter: drop-shadow(0 8px 18px rgba(0, 0, 0, .18)); }
+.admin-logo__mark { width: 58px; height: 58px; display: block; object-fit: contain; padding: 6px; border-radius: 50%; background: #fff; border: 2px solid #a7dfc4; box-shadow: 0 8px 18px rgba(0, 0, 0, .18); }
 
 .admin-nav { display: grid; gap: 5px; }
 .admin-nav__group { margin: 14px 0 4px; padding: 0 12px; color: #a7dfc4; font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; }

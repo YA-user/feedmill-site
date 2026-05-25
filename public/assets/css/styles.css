@@ -22,7 +22,7 @@ a:hover { text-decoration: underline; }
 .top-header__inner { width: min(1200px, 96vw); min-width: 1000px; margin: 0 auto; padding: 18px 0; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
 .logo { color: var(--text); display: flex; align-items: center; gap: 12px; text-decoration: none; }
 .logo:hover { text-decoration: none; }
-.logo__mark { width: 66px; height: 66px; display: block; object-fit: contain; filter: drop-shadow(0 8px 18px rgba(53, 38, 16, .12)); }
+.logo__mark { width: 70px; height: 70px; display: block; object-fit: contain; padding: 7px; border-radius: 50%; background: #fff; border: 2px solid var(--green); box-shadow: 0 8px 18px rgba(36, 112, 74, .16); }
 .logo small { display: block; color: var(--muted); margin-top: 2px; }
 .header-contacts { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; justify-content: flex-end; font-weight: 700; }
 .lang-switch { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; background: #fff; }
