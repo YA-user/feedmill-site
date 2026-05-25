@@ -51,9 +51,6 @@ function lang_url(string $path = '', ?string $lang = null): string
 {
     $lang ??= current_lang();
     $url = url($path);
-    if ($lang === 'ru') {
-        return $url;
-    }
     return $url . (str_contains($url, '?') ? '&' : '?') . 'lang=' . rawurlencode($lang);
 }
 
