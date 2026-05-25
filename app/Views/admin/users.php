@@ -8,7 +8,7 @@
 </div>
 <?php if ($errors): ?><div class="alert alert--error"><ul><?php foreach ($errors as $error): ?><li><?= e($error) ?></li><?php endforeach; ?></ul></div><?php endif; ?>
 <div class="grid-two-admin">
-    <form class="panel admin-form" method="post" data-validate>
+    <form class="panel admin-form" method="post" data-validate novalidate>
         <h2><?= $isEdit ? 'Редактировать пользователя' : 'Новый пользователь' ?></h2>
         <?= csrf_field() ?>
         <input type="hidden" name="id" value="<?= e($editing['id'] ?? '') ?>">

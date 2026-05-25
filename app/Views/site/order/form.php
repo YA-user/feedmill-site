@@ -12,7 +12,7 @@ if (!$lines) {
     ]];
 }
 ?>
-<form class="order-form" method="post" action="<?= url('/order') ?>" data-validate data-order-form>
+<form class="order-form" method="post" action="<?= url('/order') ?>" data-validate data-order-form novalidate>
     <?= csrf_field() ?>
 
     <div class="order-lines" data-order-lines>

@@ -11,7 +11,7 @@ function admin_field_value(array $row, string $name): string { return (string)($
     <a class="button button--ghost" href="<?= url('/admin/' . $sectionKey) ?>">Назад к списку</a>
 </div>
 <?php if ($errors): ?><div class="alert alert--error"><ul><?php foreach ($errors as $error): ?><li><?= e($error) ?></li><?php endforeach; ?></ul></div><?php endif; ?>
-<form class="admin-form panel" method="post" enctype="multipart/form-data" data-validate>
+<form class="admin-form panel" method="post" enctype="multipart/form-data" data-validate novalidate>
     <?= csrf_field() ?>
     <?php foreach ($section['fields'] as $field): ?>
         <?php $name = $field['name']; $type = $field['type']; $value = admin_field_value($row, $name); ?>

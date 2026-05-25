@@ -96,6 +96,7 @@
     });
 
     document.querySelectorAll('form[data-validate]').forEach((form) => {
+        form.noValidate = true;
         form.addEventListener('submit', (event) => {
             let ok = true;
             form.querySelectorAll('input, select, textarea').forEach((field) => {

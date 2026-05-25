@@ -85,9 +85,13 @@ final class AdminController extends Controller
             } else {
                 [$data, $errors] = $this->collectData($section, $row);
                 if (!$errors) {
-                    $this->insert($section['table'], $data);
-                    \flash('success', 'Запись добавлена.');
-                    \redirect('/admin/' . $sectionKey);
+                    try {
+                        $this->insert($section['table'], $data);
+                        \flash('success', 'Запись добавлена.');
+                        \redirect('/admin/' . $sectionKey);
+                    } catch (\Throwable $exception) {
+                        $errors[] = $this->databaseErrorMessage($exception);
+                    }
                 }
             }
         }
@@ -113,9 +117,13 @@ final class AdminController extends Controller
             } else {
                 [$data, $errors] = $this->collectData($section, $row);
                 if (!$errors) {
-                    $this->update($section['table'], $id, $data);
-                    \flash('success', 'Изменения сохранены.');
-                    \redirect('/admin/' . $sectionKey);
+                    try {
+                        $this->update($section['table'], $id, $data);
+                        \flash('success', 'Изменения сохранены.');
+                        \redirect('/admin/' . $sectionKey);
+                    } catch (\Throwable $exception) {
+                        $errors[] = $this->databaseErrorMessage($exception);
+                    }
                 }
                 $row = array_merge($row, $data);
             }
@@ -536,6 +544,14 @@ final class AdminController extends Controller
         $stmt->execute(['id' => $id]);
         $row = $stmt->fetch();
         return $row ?: null;
+    }
+
+    private function databaseErrorMessage(\Throwable $exception): string
+    {
+        if (str_contains($exception->getMessage(), 'UNIQUE')) {
+            return 'Запись с таким URL-адресом или email уже существует. Измените значение и попробуйте снова.';
+        }
+        return 'Не удалось сохранить запись: ' . $exception->getMessage();
     }
 
     private function notFoundAdmin(string $message): void
