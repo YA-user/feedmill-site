@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\Core\FormParser;
 use App\Models\Repository;
 
 final class SiteController extends Controller
@@ -121,24 +122,26 @@ final class SiteController extends Controller
             \redirect('/order');
         }
 
+        [$form, $errors] = FormParser::fromPost()->parse([
+            'product_id' => ['type' => 'array', 'label' => 'Вид корма', 'required' => true],
+            'quantity' => ['type' => 'array', 'label' => 'Количество', 'required' => true],
+            'full_name' => ['type' => 'string', 'label' => 'ФИО / организация', 'required' => true],
+            'phone' => ['type' => 'phone', 'label' => 'Контактный телефон', 'required' => true],
+            'email' => ['type' => 'email', 'label' => 'Email'],
+            'comment' => ['type' => 'string', 'label' => 'Комментарий'],
+        ]);
+
         $old = [
             'items' => [],
-            'full_name' => trim((string)($_POST['full_name'] ?? '')),
-            'phone' => trim((string)($_POST['phone'] ?? '')),
-            'email' => trim((string)($_POST['email'] ?? '')),
-            'comment' => trim((string)($_POST['comment'] ?? '')),
+            'full_name' => $form['full_name'],
+            'phone' => $form['phone'],
+            'email' => $form['email'],
+            'comment' => $form['comment'],
         ];
 
-        $errors = [];
         $items = [];
-        $productIds = $_POST['product_id'] ?? [];
-        $quantities = $_POST['quantity'] ?? [];
-        if (!is_array($productIds)) {
-            $productIds = [$productIds];
-        }
-        if (!is_array($quantities)) {
-            $quantities = [$quantities];
-        }
+        $productIds = $form['product_id'];
+        $quantities = $form['quantity'];
 
         $max = max(count($productIds), count($quantities));
         for ($i = 0; $i < $max; $i++) {
@@ -178,16 +181,6 @@ final class SiteController extends Controller
         if (!$items && !$errors) {
             $errors[] = 'Добавьте хотя бы один вид корма в заявку.';
         }
-        if ($old['full_name'] === '') {
-            $errors[] = 'Введите ФИО или название организации.';
-        }
-        if ($old['phone'] === '' || !preg_match('/^[0-9+()\-\s]{6,25}$/u', $old['phone'])) {
-            $errors[] = 'Введите корректный контактный телефон.';
-        }
-        if ($old['email'] !== '' && !filter_var($old['email'], FILTER_VALIDATE_EMAIL)) {
-            $errors[] = 'Введите корректный email или оставьте поле пустым.';
-        }
-
         if ($errors) {
             $this->view('site/order/form', [
                 'title' => \t('request'),
@@ -215,7 +208,7 @@ final class SiteController extends Controller
 
     public function orderSuccess(): void
     {
-        $this->view('site/order/success', ['title' => \current_lang() === 'en' ? 'Request sent' : 'Заявка отправлена']);
+        $this->view('site/order/success', ['title' => 'Заявка отправлена']);
     }
 
     public function sitemap(): void

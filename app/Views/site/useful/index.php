@@ -1,6 +1,6 @@
 <h1><?= e(t('useful')) ?></h1>
 <div class="filter-pills">
-    <a class="<?= $currentCategoryId === null ? 'active' : '' ?>" href="<?= url('/useful') ?>"><?= current_lang() === 'en' ? 'All' : 'Все' ?></a>
+    <a class="<?= $currentCategoryId === null ? 'active' : '' ?>" href="<?= url('/useful') ?>">Все</a>
     <?php foreach ($categories as $category): ?>
         <a class="<?= (int)$currentCategoryId === (int)$category['id'] ? 'active' : '' ?>" href="<?= url('/useful?category=' . $category['id']) ?>"><?= e($category['name']) ?></a>
     <?php endforeach; ?>

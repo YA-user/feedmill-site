@@ -1,6 +1,6 @@
 <section class="hero">
     <div class="hero__content">
-        <p class="eyebrow"><?= current_lang() === 'en' ? 'Pelleted feed production' : 'Производство гранулированных комбикормов' ?></p>
+        <p class="eyebrow">Производство гранулированных комбикормов</p>
         <h1><?= e($page['title'] ?? 'АгроКорм — комбикормовый завод') ?></h1>
         <div class="lead"><?= $page['body'] ?? '<p>Современный завод по производству кормов для животноводческих хозяйств.</p>' ?></div>
         <div class="hero-actions">
@@ -12,7 +12,7 @@
         <img src="<?= asset(stock_image('hero')) ?>" alt="Поле зерновых культур">
         <div class="hero-panel">
             <strong>1–2 дня</strong>
-            <span><?= current_lang() === 'en' ? 'diet selection, packing and batch delivery' : 'подбор рациона, фасовка и доставка партий' ?></span>
+            <span>подбор рациона, фасовка и доставка партий</span>
         </div>
     </div>
 </section>
@@ -48,7 +48,7 @@
                     <span class="badge"><?= e($product['category_name']) ?></span>
                     <h3><?= e($product['title']) ?></h3>
                     <p><?= excerpt($product['description'], 160) ?></p>
-                    <p class="price"><?= current_lang() === 'en' ? 'from ' : 'от ' ?><?= format_money($product['price']) ?> / <?= e($product['unit'] ?: 'кг') ?></p>
+                    <p class="price">от <?= format_money($product['price']) ?> / <?= e($product['unit'] ?: 'кг') ?></p>
                     <a href="<?= url('/products/' . $product['slug']) ?>"><?= e(t('read_more')) ?></a>
                 </div>
             </article>

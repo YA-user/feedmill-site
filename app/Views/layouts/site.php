@@ -6,7 +6,7 @@ $productCategories = Repository::categories();
 $usefulCategories = Repository::usefulCategories();
 ?>
 <!doctype html>
-<html lang="<?= e(current_lang()) ?>">
+<html lang="ru">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -20,15 +20,11 @@ $usefulCategories = Repository::usefulCategories();
     <div class="top-header__inner">
         <a class="logo" href="<?= url('/') ?>">
             <img class="logo__mark" src="<?= asset('assets/img/agrokorm-logo.png') ?>" alt="">
-            <span><strong>АгроКорм</strong><small><?= current_lang() === 'en' ? 'feed mill' : 'комбикормовый завод' ?></small></span>
+            <span><strong>АгроКорм</strong><small>комбикормовый завод</small></span>
         </a>
         <div class="header-contacts">
             <span>☎ +7 (800) 250-10-45</span>
             <span>✉ sales@agrokorm.local</span>
-            <div class="lang-switch" aria-label="Language">
-                <a class="<?= current_lang() === 'ru' ? 'is-active' : '' ?>" href="<?= e(lang_url(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/', 'ru')) ?>">RU</a>
-                <a class="<?= current_lang() === 'en' ? 'is-active' : '' ?>" href="<?= e(lang_url(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/', 'en')) ?>">EN</a>
-            </div>
             <a class="button button--light" href="<?= url('/order') ?>"><?= e(t('request')) ?></a>
         </div>
     </div>

@@ -6,6 +6,7 @@ namespace App\Controllers;
 use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Database;
+use App\Core\FormParser;
 use App\Models\Repository;
 use PDO;
 
@@ -22,8 +23,14 @@ final class AdminController extends Controller
             if (!\verify_csrf()) {
                 $errors[] = 'Проверка формы не пройдена.';
             } else {
-                $email = trim((string)($_POST['email'] ?? ''));
-                $password = (string)($_POST['password'] ?? '');
+                [$form, $errors] = FormParser::fromPost()->parse([
+                    'email' => ['type' => 'email', 'label' => 'Email', 'required' => true],
+                    'password' => ['type' => 'string', 'label' => 'Пароль', 'required' => true],
+                ]);
+                $email = $form['email'];
+                $password = $form['password'];
+            }
+            if (!$errors) {
                 if (Auth::attempt($email, $password)) {
                     \flash('success', 'Добро пожаловать в панель администратора.');
                     \redirect('/admin');
@@ -176,26 +183,26 @@ final class AdminController extends Controller
             if (!\verify_csrf()) {
                 $errors[] = 'Проверка формы не пройдена.';
             } else {
-                $id = (int)($_POST['id'] ?? 0);
-                $name = trim((string)($_POST['name'] ?? ''));
-                $email = strtolower(trim((string)($_POST['email'] ?? '')));
-                $role = (string)($_POST['role'] ?? 'content_manager');
-                $active = isset($_POST['active']) ? 1 : 0;
-                $password = (string)($_POST['password'] ?? '');
+                [$form, $errors] = FormParser::fromPost()->parse([
+                    'id' => ['type' => 'number', 'label' => 'ID', 'default' => '0'],
+                    'name' => ['type' => 'string', 'label' => 'Имя', 'required' => true],
+                    'email' => ['type' => 'email', 'label' => 'Email', 'required' => true],
+                    'role' => ['type' => 'string', 'label' => 'Роль', 'required' => true, 'allowed' => ['admin', 'content_manager']],
+                    'active' => ['type' => 'checkbox', 'label' => 'Активен'],
+                    'password' => ['type' => 'string', 'label' => 'Пароль'],
+                    'permissions' => ['type' => 'array', 'label' => 'Права доступа'],
+                ]);
+                $id = (int)$form['id'];
+                $name = $form['name'];
+                $email = $form['email'];
+                $role = $form['role'];
+                $active = (int)$form['active'];
+                $password = $form['password'];
                 $permissions = array_values(array_intersect(
-                    array_map('strval', (array)($_POST['permissions'] ?? [])),
+                    array_map('strval', $form['permissions']),
                     array_keys($this->permissionSections())
                 ));
 
-                if ($name === '') {
-                    $errors[] = 'Введите имя пользователя.';
-                }
-                if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                    $errors[] = 'Введите корректный email.';
-                }
-                if (!in_array($role, ['admin', 'content_manager'], true)) {
-                    $errors[] = 'Выберите роль.';
-                }
                 if ($id === 0 && strlen($password) < 6) {
                     $errors[] = 'Для нового пользователя пароль должен быть не короче 6 символов.';
                 }
@@ -260,12 +267,9 @@ final class AdminController extends Controller
                 'columns' => ['title' => 'Заголовок', 'image' => 'Фото', 'video_url' => 'Видео', 'published_at' => 'Дата', 'is_active' => 'Опубликовано'],
                 'fields' => [
                     ['name' => 'title', 'label' => 'Заголовок', 'type' => 'text', 'required' => true],
-                    ['name' => 'title_en', 'label' => 'Заголовок (EN)', 'type' => 'text'],
                     ['name' => 'slug', 'label' => 'URL-адрес', 'type' => 'text', 'hint' => 'Можно оставить пустым — заполнится автоматически.'],
                     ['name' => 'announce', 'label' => 'Краткий текст для списка новостей', 'type' => 'textarea', 'required' => true],
-                    ['name' => 'announce_en', 'label' => 'Краткий текст (EN)', 'type' => 'textarea'],
                     ['name' => 'body', 'label' => 'Полный текст новости', 'type' => 'wysiwyg', 'required' => true],
-                    ['name' => 'body_en', 'label' => 'Полный текст новости (EN)', 'type' => 'wysiwyg'],
                     ['name' => 'image', 'label' => 'Фото новости', 'type' => 'file_image', 'hint' => 'Если фото не загрузить, сайт покажет стандартную картинку.'],
                     ['name' => 'video_url', 'label' => 'Видео новости, URL', 'type' => 'url', 'hint' => 'Если ссылку не указать, сайт покажет стандартный видеоблок.', 'placeholder' => 'https://www.youtube.com/watch?v=...'],
                     ['name' => 'published_at', 'label' => 'Дата публикации', 'type' => 'date', 'required' => true],
@@ -278,10 +282,8 @@ final class AdminController extends Controller
                 'columns' => ['slug' => 'Ключ', 'title' => 'Название'],
                 'fields' => [
                     ['name' => 'title', 'label' => 'Название', 'type' => 'text', 'required' => true],
-                    ['name' => 'title_en', 'label' => 'Название (EN)', 'type' => 'text'],
                     ['name' => 'slug', 'label' => 'Ключ страницы', 'type' => 'text', 'required' => true, 'hint' => 'Например: history, certification, production.'],
                     ['name' => 'body', 'label' => 'Содержимое', 'type' => 'wysiwyg', 'required' => true],
-                    ['name' => 'body_en', 'label' => 'Содержимое (EN)', 'type' => 'wysiwyg'],
                 ],
             ],
             'contacts' => [
@@ -290,13 +292,10 @@ final class AdminController extends Controller
                 'columns' => ['title' => 'Название', 'phone' => 'Телефон', 'email' => 'Email'],
                 'fields' => [
                     ['name' => 'title', 'label' => 'Название офиса/отдела', 'type' => 'text', 'required' => true],
-                    ['name' => 'title_en', 'label' => 'Название офиса/отдела (EN)', 'type' => 'text'],
                     ['name' => 'address', 'label' => 'Адрес', 'type' => 'text', 'required' => true],
-                    ['name' => 'address_en', 'label' => 'Адрес (EN)', 'type' => 'text'],
                     ['name' => 'phone', 'label' => 'Телефон', 'type' => 'text', 'required' => true],
                     ['name' => 'email', 'label' => 'Email', 'type' => 'email', 'required' => true],
                     ['name' => 'work_time', 'label' => 'Время работы', 'type' => 'text'],
-                    ['name' => 'work_time_en', 'label' => 'Время работы (EN)', 'type' => 'text'],
                     ['name' => 'map_url', 'label' => 'Yandex map iframe URL', 'type' => 'text'],
                 ],
             ],
@@ -306,9 +305,7 @@ final class AdminController extends Controller
                 'columns' => ['name' => 'Название', 'website' => 'Сайт'],
                 'fields' => [
                     ['name' => 'name', 'label' => 'Название', 'type' => 'text', 'required' => true],
-                    ['name' => 'name_en', 'label' => 'Название (EN)', 'type' => 'text'],
                     ['name' => 'description', 'label' => 'Описание', 'type' => 'wysiwyg', 'required' => true],
-                    ['name' => 'description_en', 'label' => 'Описание (EN)', 'type' => 'wysiwyg'],
                     ['name' => 'website', 'label' => 'Сайт', 'type' => 'url'],
                     ['name' => 'logo', 'label' => 'Логотип', 'type' => 'file_image'],
                 ],
@@ -319,9 +316,7 @@ final class AdminController extends Controller
                 'columns' => ['name' => 'Название', 'sort_order' => 'Порядок'],
                 'fields' => [
                     ['name' => 'name', 'label' => 'Название', 'type' => 'text', 'required' => true],
-                    ['name' => 'name_en', 'label' => 'Название (EN)', 'type' => 'text'],
                     ['name' => 'description', 'label' => 'Описание', 'type' => 'textarea'],
-                    ['name' => 'description_en', 'label' => 'Описание (EN)', 'type' => 'textarea'],
                     ['name' => 'sort_order', 'label' => 'Порядок сортировки', 'type' => 'number'],
                 ],
             ],
@@ -332,15 +327,11 @@ final class AdminController extends Controller
                 'fields' => [
                     ['name' => 'category_id', 'label' => 'Категория', 'type' => 'select', 'options' => $this->options('product_categories'), 'required' => true],
                     ['name' => 'title', 'label' => 'Название', 'type' => 'text', 'required' => true],
-                    ['name' => 'title_en', 'label' => 'Название (EN)', 'type' => 'text'],
                     ['name' => 'slug', 'label' => 'URL-адрес', 'type' => 'text'],
                     ['name' => 'description', 'label' => 'Описание', 'type' => 'wysiwyg', 'required' => true],
-                    ['name' => 'description_en', 'label' => 'Описание (EN)', 'type' => 'wysiwyg'],
                     ['name' => 'recommendation', 'label' => 'Краткие рекомендации', 'type' => 'wysiwyg'],
-                    ['name' => 'recommendation_en', 'label' => 'Краткие рекомендации (EN)', 'type' => 'wysiwyg'],
                     ['name' => 'price', 'label' => 'Цена за единицу', 'type' => 'number', 'required' => true, 'step' => '0.01'],
                     ['name' => 'unit', 'label' => 'Единица измерения', 'type' => 'text'],
-                    ['name' => 'unit_en', 'label' => 'Единица измерения (EN)', 'type' => 'text'],
                     ['name' => 'image', 'label' => 'Фото продукции', 'type' => 'file_image', 'hint' => 'Если фото не загрузить, сайт покажет стандартную картинку.'],
                     ['name' => 'video_url', 'label' => 'Видео о продукции, URL', 'type' => 'url', 'hint' => 'Если ссылку не указать, сайт покажет стандартный видеоблок.', 'placeholder' => 'https://www.youtube.com/watch?v=...'],
                     ['name' => 'is_active', 'label' => 'Активно', 'type' => 'checkbox'],
@@ -353,9 +344,7 @@ final class AdminController extends Controller
                 'fields' => [
                     ['name' => 'product_id', 'label' => 'Продукция', 'type' => 'select', 'options' => $this->options('products'), 'required' => true],
                     ['name' => 'title', 'label' => 'Тема', 'type' => 'text', 'required' => true],
-                    ['name' => 'title_en', 'label' => 'Тема (EN)', 'type' => 'text'],
                     ['name' => 'body', 'label' => 'Текст рекомендации', 'type' => 'wysiwyg', 'required' => true],
-                    ['name' => 'body_en', 'label' => 'Текст рекомендации (EN)', 'type' => 'wysiwyg'],
                 ],
             ],
             'info-categories' => [
@@ -364,9 +353,7 @@ final class AdminController extends Controller
                 'columns' => ['name' => 'Название'],
                 'fields' => [
                     ['name' => 'name', 'label' => 'Название', 'type' => 'text', 'required' => true],
-                    ['name' => 'name_en', 'label' => 'Название (EN)', 'type' => 'text'],
                     ['name' => 'description', 'label' => 'Описание', 'type' => 'textarea'],
-                    ['name' => 'description_en', 'label' => 'Описание (EN)', 'type' => 'textarea'],
                 ],
             ],
             'info-articles' => [
@@ -376,12 +363,9 @@ final class AdminController extends Controller
                 'fields' => [
                     ['name' => 'category_id', 'label' => 'Категория', 'type' => 'select', 'options' => $this->options('useful_categories'), 'required' => true],
                     ['name' => 'title', 'label' => 'Название', 'type' => 'text', 'required' => true],
-                    ['name' => 'title_en', 'label' => 'Название (EN)', 'type' => 'text'],
                     ['name' => 'slug', 'label' => 'URL-адрес', 'type' => 'text'],
                     ['name' => 'announce', 'label' => 'Анонс', 'type' => 'textarea', 'required' => true],
-                    ['name' => 'announce_en', 'label' => 'Анонс (EN)', 'type' => 'textarea'],
                     ['name' => 'body', 'label' => 'Полный текст', 'type' => 'wysiwyg', 'required' => true],
-                    ['name' => 'body_en', 'label' => 'Полный текст (EN)', 'type' => 'wysiwyg'],
                     ['name' => 'published_at', 'label' => 'Дата публикации', 'type' => 'date', 'required' => true],
                     ['name' => 'is_active', 'label' => 'Опубликовано', 'type' => 'checkbox'],
                 ],

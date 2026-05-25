@@ -41,38 +41,12 @@ function add_column_if_missing(PDO $pdo, string $table, string $column, string $
 add_column_if_missing($pdo, 'news', 'image', 'TEXT');
 add_column_if_missing($pdo, 'news', 'video_url', 'TEXT');
 add_column_if_missing($pdo, 'products', 'video_url', 'TEXT');
-foreach ([
-    'pages' => ['title_en' => 'TEXT', 'body_en' => 'TEXT'],
-    'news' => ['title_en' => 'TEXT', 'announce_en' => 'TEXT', 'body_en' => 'TEXT'],
-    'product_categories' => ['name_en' => 'TEXT', 'description_en' => 'TEXT'],
-    'products' => ['title_en' => 'TEXT', 'description_en' => 'TEXT', 'recommendation_en' => 'TEXT', 'unit_en' => 'TEXT'],
-    'recommendations' => ['title_en' => 'TEXT', 'body_en' => 'TEXT'],
-    'partners' => ['name_en' => 'TEXT', 'description_en' => 'TEXT'],
-    'contacts' => ['title_en' => 'TEXT', 'address_en' => 'TEXT', 'work_time_en' => 'TEXT'],
-    'useful_categories' => ['name_en' => 'TEXT', 'description_en' => 'TEXT'],
-    'useful_articles' => ['title_en' => 'TEXT', 'announce_en' => 'TEXT', 'body_en' => 'TEXT'],
-] as $table => $columns) {
-    foreach ($columns as $column => $definition) {
-        add_column_if_missing($pdo, $table, $column, $definition);
-    }
-}
 $pdo->exec('CREATE TABLE IF NOT EXISTS user_permissions (
     user_id INTEGER NOT NULL,
     section_key TEXT NOT NULL,
     PRIMARY KEY (user_id, section_key),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 )');
-
-function update_translation(PDO $pdo, string $table, string $keyColumn, string|int $keyValue, array $fields): void {
-    $sets = [];
-    $params = ['key_value' => $keyValue];
-    foreach ($fields as $column => $value) {
-        $sets[] = $column . ' = CASE WHEN ' . $column . ' IS NULL OR ' . $column . " = '' THEN :" . $column . ' ELSE ' . $column . ' END';
-        $params[$column] = $value;
-    }
-    $stmt = $pdo->prepare('UPDATE ' . $table . ' SET ' . implode(', ', $sets) . ' WHERE ' . $keyColumn . ' = :key_value');
-    $stmt->execute($params);
-}
 
 $stockImages = [
     'news' => stock_image('news'),
@@ -228,43 +202,6 @@ $imageBackfill = [
 foreach ($imageBackfill as [$table, $column, $from, $to]) {
     $stmt = $pdo->prepare("UPDATE {$table} SET {$column} = ? WHERE {$column} = ?");
     $stmt->execute([$to, $from]);
-}
-
-$translations = [
-    ['pages', 'slug', 'home', ['title_en' => 'AgroKorm feed mill', 'body_en' => '<p><strong>AgroKorm</strong> produces pelleted feed, grain mixes, vitamin-mineral additives and premixes for farm animals and poultry.</p><p>The demo site includes a catalog, order form, news and useful materials for customers.</p>']],
-    ['pages', 'slug', 'about', ['title_en' => 'About the company', 'body_en' => '<p>AgroKorm is a training demo feed mill focused on farms, poultry houses, dairy complexes and pig farms.</p><p>The company develops feed formulas, produces compound feed and gives basic feeding recommendations.</p>']],
-    ['pages', 'slug', 'history', ['title_en' => 'Company history', 'body_en' => '<p>The plant started as a regional pelleting line and later added raw material quality control and packaging.</p><p>Today the demo enterprise produces feeds for cattle, poultry and pig farming.</p>']],
-    ['pages', 'slug', 'certification', ['title_en' => 'Certification and scientific support', 'body_en' => '<p>Each batch is accompanied by quality documentation. The process includes incoming raw material control and checks of moisture, particle size and nutritional value.</p>']],
-    ['pages', 'slug', 'production', ['title_en' => 'Production', 'body_en' => '<p>The production line includes cleaning, grinding, dosing, mixing, pelleting, cooling and packaging.</p><p>Batch accounting helps track raw materials and finished products.</p>']],
-    ['news', 'slug', 'zapuschena-novaya-liniya-granulirovaniya', ['title_en' => 'New pelleting line launched', 'announce_en' => 'The plant increased productivity and pellet stability.', 'body_en' => '<p>A new pelleting line has been launched at the plant. It helps produce batches with a more stable structure and shorter lead time.</p>']],
-    ['news', 'slug', 'rasshirena-lineyka-kormov-dlya-ptitsy', ['title_en' => 'Poultry feed range expanded', 'announce_en' => 'Starter and finisher diets were added to the catalog.', 'body_en' => '<p>The product range now includes starter, grower and finisher poultry feeds balanced by energy, protein and amino acids.</p>']],
-    ['news', 'slug', 'laboratoriya-obnovila-metodiki-kontrolya-syrya', ['title_en' => 'Laboratory updated raw material checks', 'announce_en' => 'Extended incoming control for grain and protein components was introduced.', 'body_en' => '<p>The plant laboratory updated incoming control rules to keep feed quality stable.</p>']],
-    ['product_categories', 'id', 1, ['name_en' => 'Cattle feed', 'description_en' => 'Diets for calves, young stock and dairy herds.']],
-    ['product_categories', 'id', 2, ['name_en' => 'Poultry feed', 'description_en' => 'Starter, grower and finisher feeds for broilers and layers.']],
-    ['product_categories', 'id', 3, ['name_en' => 'Pig feed', 'description_en' => 'Feeds for piglets, finishing pigs and sows.']],
-    ['product_categories', 'id', 4, ['name_en' => 'Premixes and additives', 'description_en' => 'Vitamin-mineral additives for diet balancing.']],
-    ['products', 'slug', 'krs-moloko-18', ['title_en' => 'Cattle Milk 18%', 'description_en' => '<p>Complete feed for productive dairy herds. It supports stable diet energy and milk quality.</p>', 'recommendation_en' => '<p>Introduce gradually over 5-7 days. The rate depends on productivity and the base diet.</p>', 'unit_en' => 'kg']],
-    ['products', 'slug', 'telenok-start', ['title_en' => 'Calf Starter', 'description_en' => '<p>Starter feed for early rumen development and weight gain in calves.</p>', 'recommendation_en' => '<p>Use from day 10-14 with free access to water.</p>', 'unit_en' => 'kg']],
-    ['products', 'slug', 'broyler-rost', ['title_en' => 'Broiler Grower', 'description_en' => '<p>Feed for the active growth period of broilers with a balanced amino acid profile.</p>', 'recommendation_en' => '<p>Use after starter feed before switching to finisher diet.</p>', 'unit_en' => 'kg']],
-    ['products', 'slug', 'nesushka-pik', ['title_en' => 'Layer Peak', 'description_en' => '<p>Diet for laying hens during peak egg production.</p>', 'recommendation_en' => '<p>Keep clean water and mineral supplements available.</p>', 'unit_en' => 'kg']],
-    ['products', 'slug', 'porosyata-prestart', ['title_en' => 'Piglet Prestarter', 'description_en' => '<p>Feed for early adaptation of piglets to dry feeding.</p>', 'recommendation_en' => '<p>Introduce in small portions and refresh several times a day.</p>', 'unit_en' => 'kg']],
-    ['products', 'slug', 'premiks-universal-1', ['title_en' => 'Universal Premix 1%', 'description_en' => '<p>Vitamin-mineral blend for enriching farm animal diets.</p>', 'recommendation_en' => '<p>Mix with the grain part of the diet according to the inclusion rate.</p>', 'unit_en' => 'kg']],
-    ['recommendations', 'id', 1, ['title_en' => 'Switching to a new diet', 'body_en' => '<p>Change the diet gradually: 30% new feed for the first two days, then 60%, then full transition.</p>']],
-    ['recommendations', 'id', 2, ['title_en' => 'Water control', 'body_en' => '<p>Poultry needs constant access to clean water because it directly affects feed intake.</p>']],
-    ['recommendations', 'id', 3, ['title_en' => 'Premix mixing', 'body_en' => '<p>Premix is first blended with a small filler portion and then added to the total mix.</p>']],
-    ['partners', 'id', 1, ['name_en' => 'AgroLogistics South', 'description_en' => '<p>Transport partner for compound feed deliveries to regional farms.</p>']],
-    ['partners', 'id', 2, ['name_en' => 'VetRation', 'description_en' => '<p>Consulting partner for veterinary support and diet correction.</p>']],
-    ['partners', 'id', 3, ['name_en' => 'GrainSupply', 'description_en' => '<p>Grain supplier with regular laboratory quality control.</p>']],
-    ['contacts', 'id', 1, ['title_en' => 'Sales department', 'address_en' => 'Sevastopol, Industrialnaya st., 12', 'work_time_en' => 'Mon-Fri, 09:00-18:00']],
-    ['useful_categories', 'id', 1, ['name_en' => 'Cattle feeding', 'description_en' => 'Materials about cattle feeding.']],
-    ['useful_categories', 'id', 2, ['name_en' => 'Poultry farming', 'description_en' => 'Practical recommendations for poultry farms.']],
-    ['useful_categories', 'id', 3, ['name_en' => 'Raw material quality', 'description_en' => 'Grain control, moisture and storage.']],
-    ['useful_articles', 'slug', 'kak-menyat-racion-krs', ['title_en' => 'How to change a dairy herd diet smoothly', 'announce_en' => 'A transition period reduces stress and helps keep productivity.', 'body_en' => '<p>A sudden diet change may reduce feed intake. Introduce new feed gradually and monitor appetite and productivity.</p>']],
-    ['useful_articles', 'slug', 'pochemu-granula-vazhna-dlya-broylera', ['title_en' => 'Why pellet quality matters for broilers', 'announce_en' => 'Uniform pellets improve feed intake and reduce losses.', 'body_en' => '<p>Pellet size and strength affect feed intake. Different growing periods use different fractions.</p>']],
-    ['useful_articles', 'slug', 'vhodnoy-kontrol-zerna', ['title_en' => 'Incoming grain control at a feed mill', 'announce_en' => 'Raw material quality defines the stability of finished feed.', 'body_en' => '<p>Before production, grain components are checked for moisture, smell, impurity and other indicators.</p>']],
-];
-foreach ($translations as [$table, $keyColumn, $keyValue, $fields]) {
-    update_translation($pdo, $table, $keyColumn, $keyValue, $fields);
 }
 
 $managerId = (int)$pdo->query("SELECT id FROM users WHERE email = 'manager@example.com' LIMIT 1")->fetchColumn();

@@ -4,6 +4,7 @@ declare(strict_types=1);
 require __DIR__ . '/../app/bootstrap.php';
 
 use App\Core\Database;
+use App\Core\FormParser;
 
 $pdo = Database::pdo();
 $checks = [
@@ -34,4 +35,19 @@ foreach (['news.image', 'news.video_url', 'products.video_url'] as $column) {
         exit(1);
     }
 }
-echo "Smoke tests passed: база заполнена, медиа и новые поля доступны.\n";
+
+[$parsed, $errors] = (new FormParser([
+    'email' => ' USER@EXAMPLE.COM ',
+    'phone' => '+7 (999) 000-00-00',
+    'quantity' => '10,5',
+]))->parse([
+    'email' => ['type' => 'email', 'label' => 'Email', 'required' => true],
+    'phone' => ['type' => 'phone', 'label' => 'Телефон', 'required' => true],
+    'quantity' => ['type' => 'number', 'label' => 'Количество', 'required' => true],
+]);
+if ($errors || $parsed['email'] !== 'user@example.com' || $parsed['quantity'] !== '10.5') {
+    fwrite(STDERR, "Ошибка: парсер форм работает некорректно\n");
+    exit(1);
+}
+
+echo "Smoke tests passed: база заполнена, медиа, права и парсер форм доступны.\n";
