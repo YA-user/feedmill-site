@@ -37,6 +37,196 @@ function add_column_if_missing(PDO $pdo, string $table, string $column, string $
     }
 }
 
+function value_exists(PDO $pdo, string $table, string $column, string|int $value): bool {
+    $stmt = $pdo->prepare('SELECT COUNT(*) FROM ' . $table . ' WHERE ' . $column . ' = ?');
+    $stmt->execute([$value]);
+    return (int)$stmt->fetchColumn() > 0;
+}
+
+function insert_if_missing(PDO $pdo, string $table, string $keyColumn, string|int $keyValue, array $data): int {
+    $stmt = $pdo->prepare('SELECT id FROM ' . $table . ' WHERE ' . $keyColumn . ' = ? LIMIT 1');
+    $stmt->execute([$keyValue]);
+    $id = $stmt->fetchColumn();
+    if ($id !== false) {
+        return (int)$id;
+    }
+
+    $columns = array_keys($data);
+    $placeholders = implode(', ', array_fill(0, count($columns), '?'));
+    $sql = 'INSERT INTO ' . $table . ' (' . implode(', ', $columns) . ') VALUES (' . $placeholders . ')';
+    $pdo->prepare($sql)->execute(array_values($data));
+    return (int)$pdo->lastInsertId();
+}
+
+function delete_test_data(PDO $pdo): void {
+    $testNewsSlugs = ['test-news', 'admin-news', 'browser-news'];
+    $testProductSlugs = ['product-check'];
+    $testArticleSlugs = ['article-check'];
+
+    $deleteBySlugPrefix = function (string $table, array $prefixes) use ($pdo): void {
+        foreach ($prefixes as $prefix) {
+            $stmt = $pdo->prepare('DELETE FROM ' . $table . ' WHERE slug = ? OR slug LIKE ?');
+            $stmt->execute([$prefix, $prefix . '-%']);
+        }
+    };
+
+    $deleteBySlugPrefix('news', $testNewsSlugs);
+    $deleteBySlugPrefix('products', $testProductSlugs);
+    $deleteBySlugPrefix('useful_articles', $testArticleSlugs);
+
+    $pdo->prepare("DELETE FROM news WHERE title IN ('Тестовая новость', 'Новость из админки', 'Новость через браузер')")->execute();
+    $pdo->prepare("DELETE FROM products WHERE title = 'Проверочный комбикорм'")->execute();
+    $pdo->prepare("DELETE FROM useful_articles WHERE title = 'Проверочная статья'")->execute();
+    $pdo->prepare("DELETE FROM product_categories WHERE name LIKE 'Тестовая категория %'")->execute();
+    $pdo->prepare("DELETE FROM recommendations WHERE title LIKE 'Проверочная рекомендация %'")->execute();
+
+    $orderIds = $pdo->query("SELECT id FROM orders WHERE full_name IN ('Test Student', 'Parser Test', 'Проверка сайта')")->fetchAll(PDO::FETCH_COLUMN);
+    if ($orderIds) {
+        $placeholders = implode(',', array_fill(0, count($orderIds), '?'));
+        $pdo->prepare('DELETE FROM order_items WHERE order_id IN (' . $placeholders . ')')->execute($orderIds);
+        $pdo->prepare('DELETE FROM orders WHERE id IN (' . $placeholders . ')')->execute($orderIds);
+    }
+}
+
+function add_extended_demo_data(PDO $pdo, array $stockImages): void {
+    $newsItems = [
+        [
+            'title' => 'Хозяйства готовятся к летнему сезону кормления',
+            'slug' => 'hozyaystva-gotovyatsya-k-letnemu-sezonu-kormleniya',
+            'announce' => 'Завод подготовил рекомендации по запасам комбикормов и хранению партий в теплый период.',
+            'body' => '<p>Перед летним сезоном специалисты «АгроКорм» рекомендуют заранее рассчитать потребность в комбикормах и обеспечить сухое проветриваемое хранение.</p><p>Для хозяйств доступны партии в мешках и биг-бэгах, а менеджеры помогают подобрать рацион под вид животных и продуктивность.</p>',
+            'image' => stock_image('field'),
+            'video_url' => '',
+            'published_at' => '2026-05-20',
+            'is_active' => 1,
+        ],
+        [
+            'title' => 'Обновлены рецептуры для молодняка птицы',
+            'slug' => 'obnovleny-receptury-dlya-molodnyaka-ptitsy',
+            'announce' => 'В линейке кормов для птицы уточнен баланс энергии, протеина и минеральных компонентов.',
+            'body' => '<p>Технологи предприятия обновили рецептуры для молодняка птицы с учетом сезонного качества зернового сырья.</p><p>Цель обновления — поддержать равномерный рост, хорошую поедаемость и стабильную конверсию корма.</p>',
+            'image' => $stockImages['poultry'],
+            'video_url' => '',
+            'published_at' => '2026-05-12',
+            'is_active' => 1,
+        ],
+        [
+            'title' => 'Усилен контроль качества зернового сырья',
+            'slug' => 'usilen-kontrol-kachestva-zernovogo-syrya',
+            'announce' => 'Лаборатория расширила проверку влажности, засоренности и внешних признаков партий.',
+            'body' => '<p>Каждая партия зернового сырья проходит входной контроль перед поступлением в производство.</p><p>Дополнительная проверка помогает поддерживать стабильную питательность комбикормов и снижать риски при хранении.</p>',
+            'image' => stock_image('harvest'),
+            'video_url' => '',
+            'published_at' => '2026-04-29',
+            'is_active' => 1,
+        ],
+    ];
+    foreach ($newsItems as $item) {
+        insert_if_missing($pdo, 'news', 'slug', $item['slug'], $item);
+    }
+
+    $smallFarmCategoryId = insert_if_missing($pdo, 'product_categories', 'name', 'Корма для мелких хозяйств', [
+        'name' => 'Корма для мелких хозяйств',
+        'description' => 'Готовые рационы для небольших ферм, личных подсобных хозяйств и сезонного откорма.',
+        'sort_order' => 50,
+    ]);
+    $additiveCategoryId = insert_if_missing($pdo, 'product_categories', 'name', 'Белково-витаминные добавки', [
+        'name' => 'Белково-витаминные добавки',
+        'description' => 'БВМД для балансировки рационов по протеину, витаминам и минеральным веществам.',
+        'sort_order' => 60,
+    ]);
+
+    $productIds = [];
+    $products = [
+        [
+            'category_id' => $smallFarmCategoryId,
+            'title' => 'Кролик Рост',
+            'slug' => 'krolik-rost',
+            'description' => '<p>Гранулированный корм для молодняка кроликов и откорма. Поддерживает равномерный рост и стабильное пищеварение.</p><ul><li>удобная гранула</li><li>растительная клетчатка</li><li>минеральная поддержка</li></ul>',
+            'recommendation' => '<p>Использовать при постоянном доступе к чистой воде и с постепенным переводом на новый рацион.</p>',
+            'price' => 44.80,
+            'unit' => 'кг',
+            'image' => stock_image('farm'),
+            'video_url' => '',
+            'is_active' => 1,
+        ],
+        [
+            'category_id' => $smallFarmCategoryId,
+            'title' => 'Индейка Старт',
+            'slug' => 'indeyka-start',
+            'description' => '<p>Стартовый комбикорм для индюшат с повышенным уровнем протеина и сбалансированным витаминно-минеральным комплексом.</p>',
+            'recommendation' => '<p>Подходит для раннего периода выращивания. Норму кормления корректируют по возрасту и живой массе птицы.</p>',
+            'price' => 49.60,
+            'unit' => 'кг',
+            'image' => $stockImages['poultry'],
+            'video_url' => '',
+            'is_active' => 1,
+        ],
+        [
+            'category_id' => $additiveCategoryId,
+            'title' => 'БВМД КРС Протеин 20%',
+            'slug' => 'bvmd-krs-protein-20',
+            'description' => '<p>Белково-витаминно-минеральная добавка для балансировки рационов крупного рогатого скота по протеину и микроэлементам.</p>',
+            'recommendation' => '<p>Вводить в зерновую часть рациона согласно расчетной норме. Перед применением рекомендуется консультация специалиста.</p>',
+            'price' => 86.00,
+            'unit' => 'кг',
+            'image' => $stockImages['premix'],
+            'video_url' => '',
+            'is_active' => 1,
+        ],
+    ];
+    foreach ($products as $product) {
+        $productIds[$product['slug']] = insert_if_missing($pdo, 'products', 'slug', $product['slug'], $product);
+    }
+
+    $recommendations = [
+        ['slug' => 'krolik-rost', 'title' => 'Плавный перевод кроликов на гранулу', 'body' => '<p>Новый корм вводят постепенно в течение 4–5 дней, смешивая его с привычным рационом.</p>'],
+        ['slug' => 'indeyka-start', 'title' => 'Контроль старта индюшат', 'body' => '<p>В первые недели важно следить за чистотой кормушек, температурой и постоянным доступом к воде.</p>'],
+        ['slug' => 'bvmd-krs-protein-20', 'title' => 'Точное смешивание БВМД', 'body' => '<p>Добавку предварительно смешивают с малой частью зерновой смеси, затем равномерно вводят в общий объем.</p>'],
+    ];
+    foreach ($recommendations as $recommendation) {
+        $productId = $productIds[$recommendation['slug']] ?? null;
+        if ($productId === null || value_exists($pdo, 'recommendations', 'title', $recommendation['title'])) {
+            continue;
+        }
+        $pdo->prepare('INSERT INTO recommendations (product_id, title, body) VALUES (?, ?, ?)')
+            ->execute([$productId, $recommendation['title'], $recommendation['body']]);
+    }
+
+    $storageCategoryId = insert_if_missing($pdo, 'useful_categories', 'name', 'Хранение кормов', [
+        'name' => 'Хранение кормов',
+        'description' => 'Практические материалы по складированию, срокам и защите комбикормов.',
+    ]);
+    $planningCategoryId = insert_if_missing($pdo, 'useful_categories', 'name', 'Планирование закупок', [
+        'name' => 'Планирование закупок',
+        'description' => 'Расчет потребности, график поставок и подготовка к сезонным периодам.',
+    ]);
+
+    $articles = [
+        [
+            'category_id' => $storageCategoryId,
+            'title' => 'Как правильно хранить комбикорм на ферме',
+            'slug' => 'kak-hranit-kombikorm-na-ferme',
+            'announce' => 'Сухой склад, вентиляция и защита от влаги помогают сохранить питательность корма.',
+            'body' => '<p>Комбикорм следует хранить в сухом помещении с вентиляцией, на поддонах и отдельно от химических веществ.</p><p>Открытые мешки лучше использовать в первую очередь, а остатки защищать от влаги и прямого солнца.</p>',
+            'published_at' => '2026-05-08',
+            'is_active' => 1,
+        ],
+        [
+            'category_id' => $planningCategoryId,
+            'title' => 'Как рассчитать потребность хозяйства в корме',
+            'slug' => 'kak-rasschitat-potrebnost-v-korme',
+            'announce' => 'Простой расчет помогает заранее заказать нужный объем и избежать перебоев.',
+            'body' => '<p>Для расчета умножают суточную норму кормления на количество голов и число дней запаса.</p><p>Дополнительно учитывают сезон, возраст животных, продуктивность и возможные задержки доставки.</p>',
+            'published_at' => '2026-04-24',
+            'is_active' => 1,
+        ],
+    ];
+    foreach ($articles as $article) {
+        insert_if_missing($pdo, 'useful_articles', 'slug', $article['slug'], $article);
+    }
+}
+
 // Миграции для пользователей, которые уже запускали старую версию проекта.
 add_column_if_missing($pdo, 'news', 'image', 'TEXT');
 add_column_if_missing($pdo, 'news', 'video_url', 'TEXT');
@@ -203,6 +393,9 @@ foreach ($imageBackfill as [$table, $column, $from, $to]) {
     $stmt = $pdo->prepare("UPDATE {$table} SET {$column} = ? WHERE {$column} = ?");
     $stmt->execute([$to, $from]);
 }
+
+delete_test_data($pdo);
+add_extended_demo_data($pdo, $stockImages);
 
 $managerId = (int)$pdo->query("SELECT id FROM users WHERE email = 'manager@example.com' LIMIT 1")->fetchColumn();
 if ($managerId > 0 && (int)$pdo->query('SELECT COUNT(*) FROM user_permissions WHERE user_id = ' . $managerId)->fetchColumn() === 0) {
