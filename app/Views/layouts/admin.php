@@ -33,7 +33,7 @@ if (($user['role'] ?? '') === 'admin') {
 <div class="admin-shell">
     <aside class="admin-sidebar">
         <a class="admin-logo" href="<?= url('/admin') ?>">
-            <img class="admin-logo__mark" src="<?= asset('assets/img/agrokorm-logo.svg') ?>" alt="">
+            <img class="admin-logo__mark" src="<?= asset('assets/img/agrokorm-logo.png') ?>" alt="">
             <span>АгроКорм<br><small>панель управления</small></span>
         </a>
         <nav class="admin-nav" aria-label="Меню администратора">

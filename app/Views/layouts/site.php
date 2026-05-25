@@ -14,7 +14,7 @@ $siteTitle = config('app_name');
 <header class="top-header">
     <div class="top-header__inner">
         <a class="logo" href="<?= url('/') ?>">
-            <img class="logo__mark" src="<?= asset('assets/img/agrokorm-logo.svg') ?>" alt="">
+            <img class="logo__mark" src="<?= asset('assets/img/agrokorm-logo.png') ?>" alt="">
             <span><strong>АгроКорм</strong><small>комбикормовый завод</small></span>
         </a>
         <div class="header-contacts">
