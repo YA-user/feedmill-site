@@ -1,0 +1,1 @@
+bash deploy_and_run.sh

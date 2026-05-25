@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="560" viewBox="0 0 900 560">
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f7931e"/><stop offset="1" stop-color="#d65a00"/></linearGradient></defs>
+<rect width="900" height="560" rx="42" fill="#fff8df"/><circle cx="690" cy="120" r="160" fill="#ffe39a"/><path d="M80 390c120-120 210-70 310-170 100-100 220-90 360 60v140H80z" fill="url(#g)" opacity=".9"/><text x="70" y="120" font-family="Arial" font-size="58" font-weight="700" fill="#3d2300">Корм КРС</text><text x="70" y="175" font-family="Arial" font-size="28" fill="#8a4a00">энергия роста и молочная продуктивность</text><g fill="#fff" opacity=".95"><circle cx="610" cy="330" r="22"/><circle cx="660" cy="340" r="18"/><circle cx="710" cy="320" r="24"/></g>
+</svg>

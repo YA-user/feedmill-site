@@ -1,0 +1,6 @@
+.git
+storage/*.sqlite
+storage/mail.log
+public/uploads/*
+!public/uploads/.gitkeep
+*.zip

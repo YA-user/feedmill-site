@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 506" role="img" aria-labelledby="title desc">
+  <title id="title">Default video preview</title>
+  <desc id="desc">Video preview illustration</desc>
+  <rect width="900" height="506" rx="32" fill="#2f2417"/>
+  <path d="M0 360c120-52 220-52 300 0s180 52 300 0 210-52 300 18v128H0Z" fill="#f7931e" opacity=".34"/>
+  <circle cx="702" cy="118" r="64" fill="#ffc928"/>
+  <rect x="168" y="126" width="564" height="292" rx="34" fill="#fff6dd"/>
+  <rect x="204" y="162" width="492" height="220" rx="24" fill="#f7931e"/>
+  <circle cx="450" cy="272" r="72" fill="#fff6dd"/>
+  <path d="M428 232v80l72-40Z" fill="#d65a00"/>
+  <path d="M250 334h170m60 0h170" stroke="#fff6dd" stroke-width="16" stroke-linecap="round" opacity=".72"/>
+</svg>

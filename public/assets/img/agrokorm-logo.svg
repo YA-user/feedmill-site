@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220" role="img" aria-labelledby="title desc">
+  <title id="title">АгроКорм</title>
+  <desc id="desc">Логотип комбикормового завода с колосом и гранулой корма</desc>
+  <defs>
+    <linearGradient id="field" x1="28" y1="24" x2="190" y2="198" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#376B43"/>
+      <stop offset=".52" stop-color="#D6A029"/>
+      <stop offset="1" stop-color="#B95812"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="58" y1="45" x2="156" y2="184" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF8D8"/>
+      <stop offset="1" stop-color="#F4C84A"/>
+    </linearGradient>
+  </defs>
+  <rect x="14" y="14" width="192" height="192" rx="44" fill="url(#field)"/>
+  <rect x="22" y="22" width="176" height="176" rx="38" fill="none" stroke="#FFF8D8" stroke-opacity=".34" stroke-width="4"/>
+  <path d="M61 143c33-20 68-29 104-27-20 29-50 45-91 49-10 1-18-10-13-22Z" fill="#FFF8D8" opacity=".92"/>
+  <path d="M69 151c31-16 61-24 91-25" fill="none" stroke="#376B43" stroke-width="6" stroke-linecap="round" opacity=".75"/>
+  <path d="M107 154V62" fill="none" stroke="url(#shine)" stroke-width="8" stroke-linecap="round"/>
+  <path d="M107 82c-20-12-35-12-46 0 17 15 33 17 46 0Zm0 26c-23-12-41-12-54 1 20 16 39 18 54-1Zm0-52c16-14 33-18 52-10-12 18-29 24-52 10Zm0 26c20-13 39-15 57-5-15 19-33 23-57 5Zm0 26c23-12 43-12 60 0-18 17-38 20-60 0Z" fill="#FFF8D8"/>
+  <circle cx="67" cy="80" r="14" fill="#F4C84A"/>
+  <circle cx="153" cy="154" r="18" fill="#F4C84A"/>
+  <circle cx="153" cy="154" r="8" fill="#B95812"/>
+  <path d="M61 126h31m36 0h31" stroke="#FFF8D8" stroke-width="8" stroke-linecap="round" opacity=".9"/>
+</svg>
