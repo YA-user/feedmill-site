@@ -16,6 +16,18 @@
         <label><span>Email *</span><input type="email" name="email" value="<?= e($editing['email'] ?? '') ?>" required></label>
         <label><span>Роль</span><select name="role"><option value="content_manager"<?= selected($editing['role'] ?? '', 'content_manager') ?>>Контент-менеджер</option><option value="admin"<?= selected($editing['role'] ?? '', 'admin') ?>>Администратор</option></select></label>
         <label><span>Пароль <?= $isEdit ? '(оставьте пустым, если не менять)' : '*' ?></span><input type="password" name="password" <?= $isEdit ? '' : 'required' ?>></label>
+        <fieldset class="permission-box">
+            <legend>Доступные разделы для контент-менеджера</legend>
+            <p class="muted">Администратор получает полный доступ автоматически.</p>
+            <div class="permission-grid">
+                <?php foreach (($permissionSections ?? []) as $sectionKey => $sectionLabel): ?>
+                    <label class="check">
+                        <input type="checkbox" name="permissions[]" value="<?= e($sectionKey) ?>"<?= in_array($sectionKey, $editingPermissions ?? [], true) ? ' checked' : '' ?>>
+                        <?= e($sectionLabel) ?>
+                    </label>
+                <?php endforeach; ?>
+            </div>
+        </fieldset>
         <label class="check"><input type="checkbox" name="active" value="1"<?= checked($editing['active'] ?? 1) ?>> Активен</label>
         <div class="form-actions">
             <button class="button" type="submit">Сохранить</button>

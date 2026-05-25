@@ -14,7 +14,9 @@ CREATE TABLE IF NOT EXISTS pages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     slug TEXT NOT NULL UNIQUE,
     title TEXT NOT NULL,
-    body TEXT NOT NULL
+    title_en TEXT,
+    body TEXT NOT NULL,
+    body_en TEXT
 );
 
 CREATE TABLE IF NOT EXISTS news (
@@ -22,7 +24,10 @@ CREATE TABLE IF NOT EXISTS news (
     title TEXT NOT NULL,
     slug TEXT NOT NULL UNIQUE,
     announce TEXT NOT NULL,
+    title_en TEXT,
+    announce_en TEXT,
     body TEXT NOT NULL,
+    body_en TEXT,
     image TEXT,
     video_url TEXT,
     published_at TEXT NOT NULL,
@@ -32,7 +37,9 @@ CREATE TABLE IF NOT EXISTS news (
 CREATE TABLE IF NOT EXISTS product_categories (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
+    name_en TEXT,
     description TEXT,
+    description_en TEXT,
     sort_order INTEGER NOT NULL DEFAULT 0
 );
 
@@ -40,11 +47,15 @@ CREATE TABLE IF NOT EXISTS products (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     category_id INTEGER NOT NULL,
     title TEXT NOT NULL,
+    title_en TEXT,
     slug TEXT NOT NULL UNIQUE,
     description TEXT NOT NULL,
+    description_en TEXT,
     recommendation TEXT,
+    recommendation_en TEXT,
     price REAL NOT NULL DEFAULT 0,
     unit TEXT NOT NULL DEFAULT 'кг',
+    unit_en TEXT,
     image TEXT,
     video_url TEXT,
     is_active INTEGER NOT NULL DEFAULT 1,
@@ -55,14 +66,18 @@ CREATE TABLE IF NOT EXISTS recommendations (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     product_id INTEGER NOT NULL,
     title TEXT NOT NULL,
+    title_en TEXT,
     body TEXT NOT NULL,
+    body_en TEXT,
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS partners (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
+    name_en TEXT,
     description TEXT NOT NULL,
+    description_en TEXT,
     website TEXT,
     logo TEXT
 );
@@ -70,26 +85,34 @@ CREATE TABLE IF NOT EXISTS partners (
 CREATE TABLE IF NOT EXISTS contacts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
+    title_en TEXT,
     address TEXT NOT NULL,
+    address_en TEXT,
     phone TEXT NOT NULL,
     email TEXT NOT NULL,
     work_time TEXT,
+    work_time_en TEXT,
     map_url TEXT
 );
 
 CREATE TABLE IF NOT EXISTS useful_categories (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
-    description TEXT
+    name_en TEXT,
+    description TEXT,
+    description_en TEXT
 );
 
 CREATE TABLE IF NOT EXISTS useful_articles (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     category_id INTEGER NOT NULL,
     title TEXT NOT NULL,
+    title_en TEXT,
     slug TEXT NOT NULL UNIQUE,
     announce TEXT NOT NULL,
+    announce_en TEXT,
     body TEXT NOT NULL,
+    body_en TEXT,
     published_at TEXT NOT NULL,
     is_active INTEGER NOT NULL DEFAULT 1,
     FOREIGN KEY (category_id) REFERENCES useful_categories(id) ON DELETE RESTRICT
@@ -105,6 +128,13 @@ CREATE TABLE IF NOT EXISTS media (
     sort_order INTEGER NOT NULL DEFAULT 0,
     is_active INTEGER NOT NULL DEFAULT 1,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS user_permissions (
+    user_id INTEGER NOT NULL,
+    section_key TEXT NOT NULL,
+    PRIMARY KEY (user_id, section_key),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS orders (

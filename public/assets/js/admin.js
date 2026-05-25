@@ -1,4 +1,17 @@
 (function () {
+    if (window.jQuery) {
+        window.jQuery(($) => {
+            $('.admin-nav__link').on('mouseenter', function () {
+                $(this).attr('data-hovered', '1');
+            });
+            $('form[data-validate]').on('submit.jqueryCheck', function () {
+                $(this).find('[required]').each(function () {
+                    $(this).toggleClass('is-invalid', !String($(this).val() || '').trim());
+                });
+            });
+        });
+    }
+
     document.querySelectorAll('form[data-confirm]').forEach((form) => {
         form.addEventListener('submit', (event) => {
             if (!confirm(form.dataset.confirm || 'Подтвердите действие')) {

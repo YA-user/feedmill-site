@@ -1,6 +1,17 @@
 (function () {
     const money = new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB' });
 
+    if (window.jQuery) {
+        window.jQuery(($) => {
+            $('[data-slideshow]').attr('data-jquery-ready', '1');
+            $('form[data-validate]').on('submit.jqueryCheck', function () {
+                $(this).find('[required]').each(function () {
+                    $(this).toggleClass('is-invalid', !String($(this).val() || '').trim());
+                });
+            });
+        });
+    }
+
     document.querySelectorAll('[data-slideshow]').forEach((slider) => {
         const slides = Array.from(slider.querySelectorAll('.slide'));
         const dotsWrap = slider.querySelector('[data-slider-dots]');

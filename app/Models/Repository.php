@@ -13,12 +13,22 @@ final class Repository
         return Database::pdo();
     }
 
+    private static function localize(?array $row, array $fields): ?array
+    {
+        return $row ? \localize_row($row, $fields) : null;
+    }
+
+    private static function localizeMany(array $rows, array $fields): array
+    {
+        return array_map(fn (array $row): array => \localize_row($row, $fields), $rows);
+    }
+
     public static function page(string $slug): ?array
     {
         $stmt = self::pdo()->prepare('SELECT * FROM pages WHERE slug = :slug LIMIT 1');
         $stmt->execute(['slug' => $slug]);
         $page = $stmt->fetch();
-        return $page ?: null;
+        return self::localize($page ?: null, ['title', 'body']);
     }
 
     public static function latestNews(int $limit = 5): array
@@ -26,12 +36,15 @@ final class Repository
         $stmt = self::pdo()->prepare('SELECT * FROM news WHERE is_active = 1 ORDER BY published_at DESC, id DESC LIMIT :limit');
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->execute();
-        return $stmt->fetchAll();
+        return self::localizeMany($stmt->fetchAll(), ['title', 'announce', 'body']);
     }
 
     public static function news(): array
     {
-        return self::pdo()->query('SELECT * FROM news WHERE is_active = 1 ORDER BY published_at DESC, id DESC')->fetchAll();
+        return self::localizeMany(
+            self::pdo()->query('SELECT * FROM news WHERE is_active = 1 ORDER BY published_at DESC, id DESC')->fetchAll(),
+            ['title', 'announce', 'body']
+        );
     }
 
     public static function findNews(string $idOrSlug): ?array
@@ -40,17 +53,20 @@ final class Repository
         $stmt = self::pdo()->prepare("SELECT * FROM news WHERE $field = :value AND is_active = 1 LIMIT 1");
         $stmt->execute(['value' => $idOrSlug]);
         $row = $stmt->fetch();
-        return $row ?: null;
+        return self::localize($row ?: null, ['title', 'announce', 'body']);
     }
 
     public static function categories(): array
     {
-        return self::pdo()->query('SELECT * FROM product_categories ORDER BY sort_order, name')->fetchAll();
+        return self::localizeMany(
+            self::pdo()->query('SELECT * FROM product_categories ORDER BY sort_order, name')->fetchAll(),
+            ['name', 'description']
+        );
     }
 
     public static function products(?int $categoryId = null, bool $activeOnly = true): array
     {
-        $sql = 'SELECT p.*, c.name AS category_name FROM products p LEFT JOIN product_categories c ON c.id = p.category_id WHERE 1=1';
+        $sql = 'SELECT p.*, c.name AS category_name, c.name_en AS category_name_en FROM products p LEFT JOIN product_categories c ON c.id = p.category_id WHERE 1=1';
         $params = [];
         if ($categoryId !== null) {
             $sql .= ' AND p.category_id = :category_id';
@@ -62,43 +78,52 @@ final class Repository
         $sql .= ' ORDER BY c.sort_order, p.title';
         $stmt = self::pdo()->prepare($sql);
         $stmt->execute($params);
-        return $stmt->fetchAll();
+        return self::localizeMany($stmt->fetchAll(), ['title', 'description', 'recommendation', 'unit', 'category_name']);
     }
 
     public static function findProduct(string $idOrSlug): ?array
     {
         $field = ctype_digit($idOrSlug) ? 'p.id' : 'p.slug';
-        $stmt = self::pdo()->prepare("SELECT p.*, c.name AS category_name FROM products p LEFT JOIN product_categories c ON c.id = p.category_id WHERE $field = :value AND p.is_active = 1 LIMIT 1");
+        $stmt = self::pdo()->prepare("SELECT p.*, c.name AS category_name, c.name_en AS category_name_en FROM products p LEFT JOIN product_categories c ON c.id = p.category_id WHERE $field = :value AND p.is_active = 1 LIMIT 1");
         $stmt->execute(['value' => $idOrSlug]);
         $row = $stmt->fetch();
-        return $row ?: null;
+        return self::localize($row ?: null, ['title', 'description', 'recommendation', 'unit', 'category_name']);
     }
 
     public static function recommendationsForProduct(int $productId): array
     {
         $stmt = self::pdo()->prepare('SELECT * FROM recommendations WHERE product_id = :id ORDER BY id DESC');
         $stmt->execute(['id' => $productId]);
-        return $stmt->fetchAll();
+        return self::localizeMany($stmt->fetchAll(), ['title', 'body']);
     }
 
     public static function partners(): array
     {
-        return self::pdo()->query('SELECT * FROM partners ORDER BY name')->fetchAll();
+        return self::localizeMany(
+            self::pdo()->query('SELECT * FROM partners ORDER BY name')->fetchAll(),
+            ['name', 'description']
+        );
     }
 
     public static function contacts(): array
     {
-        return self::pdo()->query('SELECT * FROM contacts ORDER BY id')->fetchAll();
+        return self::localizeMany(
+            self::pdo()->query('SELECT * FROM contacts ORDER BY id')->fetchAll(),
+            ['title', 'address', 'work_time']
+        );
     }
 
     public static function usefulCategories(): array
     {
-        return self::pdo()->query('SELECT * FROM useful_categories ORDER BY name')->fetchAll();
+        return self::localizeMany(
+            self::pdo()->query('SELECT * FROM useful_categories ORDER BY name')->fetchAll(),
+            ['name', 'description']
+        );
     }
 
     public static function usefulArticles(?int $categoryId = null): array
     {
-        $sql = 'SELECT a.*, c.name AS category_name FROM useful_articles a LEFT JOIN useful_categories c ON c.id = a.category_id WHERE a.is_active = 1';
+        $sql = 'SELECT a.*, c.name AS category_name, c.name_en AS category_name_en FROM useful_articles a LEFT JOIN useful_categories c ON c.id = a.category_id WHERE a.is_active = 1';
         $params = [];
         if ($categoryId !== null) {
             $sql .= ' AND a.category_id = :category_id';
@@ -107,16 +132,16 @@ final class Repository
         $sql .= ' ORDER BY a.published_at DESC, a.id DESC';
         $stmt = self::pdo()->prepare($sql);
         $stmt->execute($params);
-        return $stmt->fetchAll();
+        return self::localizeMany($stmt->fetchAll(), ['title', 'announce', 'body', 'category_name']);
     }
 
     public static function findUsefulArticle(string $idOrSlug): ?array
     {
         $field = ctype_digit($idOrSlug) ? 'a.id' : 'a.slug';
-        $stmt = self::pdo()->prepare("SELECT a.*, c.name AS category_name FROM useful_articles a LEFT JOIN useful_categories c ON c.id = a.category_id WHERE $field = :value AND a.is_active = 1 LIMIT 1");
+        $stmt = self::pdo()->prepare("SELECT a.*, c.name AS category_name, c.name_en AS category_name_en FROM useful_articles a LEFT JOIN useful_categories c ON c.id = a.category_id WHERE $field = :value AND a.is_active = 1 LIMIT 1");
         $stmt->execute(['value' => $idOrSlug]);
         $row = $stmt->fetch();
-        return $row ?: null;
+        return self::localize($row ?: null, ['title', 'announce', 'body', 'category_name']);
     }
 
     public static function media(?string $type = null, ?int $limit = null): array

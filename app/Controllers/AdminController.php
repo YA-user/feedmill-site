@@ -52,6 +52,7 @@ final class AdminController extends Controller
     {
         Auth::require();
         $section = $this->section($sectionKey);
+        $this->requireSectionAccess($sectionKey);
         $pdo = Database::pdo();
         $sql = 'SELECT * FROM ' . $section['table'];
         if (!empty($section['where'])) {
@@ -67,6 +68,7 @@ final class AdminController extends Controller
     {
         Auth::require();
         $section = $this->section($sectionKey);
+        $this->requireSectionAccess($sectionKey);
         $row = [];
         $errors = [];
 
@@ -90,6 +92,7 @@ final class AdminController extends Controller
     {
         Auth::require();
         $section = $this->section($sectionKey);
+        $this->requireSectionAccess($sectionKey);
         $row = $this->findRow($section['table'], $id);
         if (!$row) {
             $this->notFoundAdmin('Запись не найдена');
@@ -117,6 +120,7 @@ final class AdminController extends Controller
     public function delete(string $sectionKey, int $id): void
     {
         Auth::require();
+        $this->requireSectionAccess($sectionKey);
         if (!\verify_csrf()) {
             \flash('error', 'Проверка формы не пройдена.');
             \redirect('/admin/' . $sectionKey);
@@ -139,6 +143,7 @@ final class AdminController extends Controller
     public function orders(): void
     {
         Auth::require();
+        $this->requireSectionAccess('orders');
         $pdo = Database::pdo();
         if (\is_post() && \verify_csrf()) {
             $id = (int)($_POST['id'] ?? 0);
@@ -177,6 +182,10 @@ final class AdminController extends Controller
                 $role = (string)($_POST['role'] ?? 'content_manager');
                 $active = isset($_POST['active']) ? 1 : 0;
                 $password = (string)($_POST['password'] ?? '');
+                $permissions = array_values(array_intersect(
+                    array_map('strval', (array)($_POST['permissions'] ?? [])),
+                    array_keys($this->permissionSections())
+                ));
 
                 if ($name === '') {
                     $errors[] = 'Введите имя пользователя.';
@@ -201,6 +210,7 @@ final class AdminController extends Controller
                         }
                         $stmt = $pdo->prepare('UPDATE users SET ' . $fields . ' WHERE id = :id');
                         $stmt->execute($params);
+                        $this->syncUserPermissions($id, $role === 'content_manager' ? $permissions : []);
                         \flash('success', 'Пользователь обновлен.');
                     } else {
                         $stmt = $pdo->prepare('INSERT INTO users (name, email, password_hash, role, active, created_at) VALUES (:name, :email, :password_hash, :role, :active, :created_at)');
@@ -212,6 +222,7 @@ final class AdminController extends Controller
                             'active' => $active,
                             'created_at' => date('Y-m-d H:i:s'),
                         ]);
+                        $this->syncUserPermissions((int)$pdo->lastInsertId(), $role === 'content_manager' ? $permissions : []);
                         \flash('success', 'Пользователь создан.');
                     }
                     \redirect('/admin/users');
@@ -230,7 +241,9 @@ final class AdminController extends Controller
         }
 
         $users = $pdo->query('SELECT id, name, email, role, active, created_at FROM users ORDER BY id')->fetchAll();
-        $this->view('admin/users', compact('users', 'editing', 'errors'), 'admin');
+        $permissionSections = $this->permissionSections();
+        $editingPermissions = $editing ? $this->loadUserPermissions((int)$editing['id']) : [];
+        $this->view('admin/users', compact('users', 'editing', 'errors', 'permissionSections', 'editingPermissions'), 'admin');
     }
 
     public function sectionExists(string $sectionKey): bool
@@ -247,9 +260,12 @@ final class AdminController extends Controller
                 'columns' => ['title' => 'Заголовок', 'image' => 'Фото', 'video_url' => 'Видео', 'published_at' => 'Дата', 'is_active' => 'Опубликовано'],
                 'fields' => [
                     ['name' => 'title', 'label' => 'Заголовок', 'type' => 'text', 'required' => true],
+                    ['name' => 'title_en', 'label' => 'Заголовок (EN)', 'type' => 'text'],
                     ['name' => 'slug', 'label' => 'URL-адрес', 'type' => 'text', 'hint' => 'Можно оставить пустым — заполнится автоматически.'],
                     ['name' => 'announce', 'label' => 'Краткий текст для списка новостей', 'type' => 'textarea', 'required' => true],
+                    ['name' => 'announce_en', 'label' => 'Краткий текст (EN)', 'type' => 'textarea'],
                     ['name' => 'body', 'label' => 'Полный текст новости', 'type' => 'wysiwyg', 'required' => true],
+                    ['name' => 'body_en', 'label' => 'Полный текст новости (EN)', 'type' => 'wysiwyg'],
                     ['name' => 'image', 'label' => 'Фото новости', 'type' => 'file_image', 'hint' => 'Если фото не загрузить, сайт покажет стандартную картинку.'],
                     ['name' => 'video_url', 'label' => 'Видео новости, URL', 'type' => 'url', 'hint' => 'Если ссылку не указать, сайт покажет стандартный видеоблок.', 'placeholder' => 'https://www.youtube.com/watch?v=...'],
                     ['name' => 'published_at', 'label' => 'Дата публикации', 'type' => 'date', 'required' => true],
@@ -262,8 +278,10 @@ final class AdminController extends Controller
                 'columns' => ['slug' => 'Ключ', 'title' => 'Название'],
                 'fields' => [
                     ['name' => 'title', 'label' => 'Название', 'type' => 'text', 'required' => true],
+                    ['name' => 'title_en', 'label' => 'Название (EN)', 'type' => 'text'],
                     ['name' => 'slug', 'label' => 'Ключ страницы', 'type' => 'text', 'required' => true, 'hint' => 'Например: history, certification, production.'],
                     ['name' => 'body', 'label' => 'Содержимое', 'type' => 'wysiwyg', 'required' => true],
+                    ['name' => 'body_en', 'label' => 'Содержимое (EN)', 'type' => 'wysiwyg'],
                 ],
             ],
             'contacts' => [
@@ -272,10 +290,13 @@ final class AdminController extends Controller
                 'columns' => ['title' => 'Название', 'phone' => 'Телефон', 'email' => 'Email'],
                 'fields' => [
                     ['name' => 'title', 'label' => 'Название офиса/отдела', 'type' => 'text', 'required' => true],
+                    ['name' => 'title_en', 'label' => 'Название офиса/отдела (EN)', 'type' => 'text'],
                     ['name' => 'address', 'label' => 'Адрес', 'type' => 'text', 'required' => true],
+                    ['name' => 'address_en', 'label' => 'Адрес (EN)', 'type' => 'text'],
                     ['name' => 'phone', 'label' => 'Телефон', 'type' => 'text', 'required' => true],
                     ['name' => 'email', 'label' => 'Email', 'type' => 'email', 'required' => true],
                     ['name' => 'work_time', 'label' => 'Время работы', 'type' => 'text'],
+                    ['name' => 'work_time_en', 'label' => 'Время работы (EN)', 'type' => 'text'],
                     ['name' => 'map_url', 'label' => 'Yandex map iframe URL', 'type' => 'text'],
                 ],
             ],
@@ -285,7 +306,9 @@ final class AdminController extends Controller
                 'columns' => ['name' => 'Название', 'website' => 'Сайт'],
                 'fields' => [
                     ['name' => 'name', 'label' => 'Название', 'type' => 'text', 'required' => true],
+                    ['name' => 'name_en', 'label' => 'Название (EN)', 'type' => 'text'],
                     ['name' => 'description', 'label' => 'Описание', 'type' => 'wysiwyg', 'required' => true],
+                    ['name' => 'description_en', 'label' => 'Описание (EN)', 'type' => 'wysiwyg'],
                     ['name' => 'website', 'label' => 'Сайт', 'type' => 'url'],
                     ['name' => 'logo', 'label' => 'Логотип', 'type' => 'file_image'],
                 ],
@@ -296,7 +319,9 @@ final class AdminController extends Controller
                 'columns' => ['name' => 'Название', 'sort_order' => 'Порядок'],
                 'fields' => [
                     ['name' => 'name', 'label' => 'Название', 'type' => 'text', 'required' => true],
+                    ['name' => 'name_en', 'label' => 'Название (EN)', 'type' => 'text'],
                     ['name' => 'description', 'label' => 'Описание', 'type' => 'textarea'],
+                    ['name' => 'description_en', 'label' => 'Описание (EN)', 'type' => 'textarea'],
                     ['name' => 'sort_order', 'label' => 'Порядок сортировки', 'type' => 'number'],
                 ],
             ],
@@ -307,11 +332,15 @@ final class AdminController extends Controller
                 'fields' => [
                     ['name' => 'category_id', 'label' => 'Категория', 'type' => 'select', 'options' => $this->options('product_categories'), 'required' => true],
                     ['name' => 'title', 'label' => 'Название', 'type' => 'text', 'required' => true],
+                    ['name' => 'title_en', 'label' => 'Название (EN)', 'type' => 'text'],
                     ['name' => 'slug', 'label' => 'URL-адрес', 'type' => 'text'],
                     ['name' => 'description', 'label' => 'Описание', 'type' => 'wysiwyg', 'required' => true],
+                    ['name' => 'description_en', 'label' => 'Описание (EN)', 'type' => 'wysiwyg'],
                     ['name' => 'recommendation', 'label' => 'Краткие рекомендации', 'type' => 'wysiwyg'],
+                    ['name' => 'recommendation_en', 'label' => 'Краткие рекомендации (EN)', 'type' => 'wysiwyg'],
                     ['name' => 'price', 'label' => 'Цена за единицу', 'type' => 'number', 'required' => true, 'step' => '0.01'],
                     ['name' => 'unit', 'label' => 'Единица измерения', 'type' => 'text'],
+                    ['name' => 'unit_en', 'label' => 'Единица измерения (EN)', 'type' => 'text'],
                     ['name' => 'image', 'label' => 'Фото продукции', 'type' => 'file_image', 'hint' => 'Если фото не загрузить, сайт покажет стандартную картинку.'],
                     ['name' => 'video_url', 'label' => 'Видео о продукции, URL', 'type' => 'url', 'hint' => 'Если ссылку не указать, сайт покажет стандартный видеоблок.', 'placeholder' => 'https://www.youtube.com/watch?v=...'],
                     ['name' => 'is_active', 'label' => 'Активно', 'type' => 'checkbox'],
@@ -324,7 +353,9 @@ final class AdminController extends Controller
                 'fields' => [
                     ['name' => 'product_id', 'label' => 'Продукция', 'type' => 'select', 'options' => $this->options('products'), 'required' => true],
                     ['name' => 'title', 'label' => 'Тема', 'type' => 'text', 'required' => true],
+                    ['name' => 'title_en', 'label' => 'Тема (EN)', 'type' => 'text'],
                     ['name' => 'body', 'label' => 'Текст рекомендации', 'type' => 'wysiwyg', 'required' => true],
+                    ['name' => 'body_en', 'label' => 'Текст рекомендации (EN)', 'type' => 'wysiwyg'],
                 ],
             ],
             'info-categories' => [
@@ -333,7 +364,9 @@ final class AdminController extends Controller
                 'columns' => ['name' => 'Название'],
                 'fields' => [
                     ['name' => 'name', 'label' => 'Название', 'type' => 'text', 'required' => true],
+                    ['name' => 'name_en', 'label' => 'Название (EN)', 'type' => 'text'],
                     ['name' => 'description', 'label' => 'Описание', 'type' => 'textarea'],
+                    ['name' => 'description_en', 'label' => 'Описание (EN)', 'type' => 'textarea'],
                 ],
             ],
             'info-articles' => [
@@ -343,9 +376,12 @@ final class AdminController extends Controller
                 'fields' => [
                     ['name' => 'category_id', 'label' => 'Категория', 'type' => 'select', 'options' => $this->options('useful_categories'), 'required' => true],
                     ['name' => 'title', 'label' => 'Название', 'type' => 'text', 'required' => true],
+                    ['name' => 'title_en', 'label' => 'Название (EN)', 'type' => 'text'],
                     ['name' => 'slug', 'label' => 'URL-адрес', 'type' => 'text'],
                     ['name' => 'announce', 'label' => 'Анонс', 'type' => 'textarea', 'required' => true],
+                    ['name' => 'announce_en', 'label' => 'Анонс (EN)', 'type' => 'textarea'],
                     ['name' => 'body', 'label' => 'Полный текст', 'type' => 'wysiwyg', 'required' => true],
+                    ['name' => 'body_en', 'label' => 'Полный текст (EN)', 'type' => 'wysiwyg'],
                     ['name' => 'published_at', 'label' => 'Дата публикации', 'type' => 'date', 'required' => true],
                     ['name' => 'is_active', 'label' => 'Опубликовано', 'type' => 'checkbox'],
                 ],
@@ -360,6 +396,50 @@ final class AdminController extends Controller
             throw new \RuntimeException('Неизвестный раздел администрирования: ' . $sectionKey);
         }
         return $sections[$sectionKey];
+    }
+
+    private function requireSectionAccess(string $sectionKey): void
+    {
+        if (!Auth::canAccessSection($sectionKey)) {
+            \flash('error', 'У вас нет доступа к этому разделу.');
+            \redirect('/admin');
+        }
+    }
+
+    private function permissionSections(): array
+    {
+        return [
+            'news' => 'Новости',
+            'pages' => 'Страницы сайта',
+            'contacts' => 'Контакты',
+            'partners' => 'Партнеры',
+            'categories' => 'Категории продукции',
+            'products' => 'Продукция',
+            'recommendations' => 'Рекомендации',
+            'info-categories' => 'Категории полезной информации',
+            'info-articles' => 'Полезная информация',
+            'orders' => 'Заявки покупателей',
+        ];
+    }
+
+    private function loadUserPermissions(int $userId): array
+    {
+        $stmt = Database::pdo()->prepare('SELECT section_key FROM user_permissions WHERE user_id = :user_id');
+        $stmt->execute(['user_id' => $userId]);
+        return array_column($stmt->fetchAll(), 'section_key');
+    }
+
+    private function syncUserPermissions(int $userId, array $permissions): void
+    {
+        $pdo = Database::pdo();
+        $pdo->prepare('DELETE FROM user_permissions WHERE user_id = :user_id')->execute(['user_id' => $userId]);
+        if (!$permissions) {
+            return;
+        }
+        $stmt = $pdo->prepare('INSERT INTO user_permissions (user_id, section_key) VALUES (:user_id, :section_key)');
+        foreach (array_unique($permissions) as $sectionKey) {
+            $stmt->execute(['user_id' => $userId, 'section_key' => $sectionKey]);
+        }
     }
 
     private function options(string $table): array

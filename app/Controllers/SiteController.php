@@ -11,7 +11,7 @@ final class SiteController extends Controller
     public function home(): void
     {
         $this->view('site/home', [
-            'title' => 'Главная',
+            'title' => \t('home'),
             'page' => Repository::page('home'),
             'news' => Repository::latestNews(3),
             'products' => Repository::products(null, true),
@@ -21,7 +21,7 @@ final class SiteController extends Controller
 
     public function newsIndex(): void
     {
-        $this->view('site/news/index', ['title' => 'Новости компании', 'news' => Repository::news()]);
+        $this->view('site/news/index', ['title' => \t('company_news'), 'news' => Repository::news()]);
     }
 
     public function newsShow(string $idOrSlug): void
@@ -47,7 +47,7 @@ final class SiteController extends Controller
     public function products(?int $categoryId = null): void
     {
         $this->view('site/products/index', [
-            'title' => 'Продукция',
+            'title' => \t('products'),
             'categories' => Repository::categories(),
             'products' => Repository::products($categoryId, true),
             'currentCategoryId' => $categoryId,
@@ -70,18 +70,18 @@ final class SiteController extends Controller
 
     public function partners(): void
     {
-        $this->view('site/partners', ['title' => 'Наши партнеры', 'partners' => Repository::partners()]);
+        $this->view('site/partners', ['title' => \t('partners'), 'partners' => Repository::partners()]);
     }
 
     public function contacts(): void
     {
-        $this->view('site/contacts', ['title' => 'Контакты и схема проезда', 'contacts' => Repository::contacts()]);
+        $this->view('site/contacts', ['title' => \t('contacts'), 'contacts' => Repository::contacts()]);
     }
 
     public function useful(?int $categoryId = null): void
     {
         $this->view('site/useful/index', [
-            'title' => 'Полезная информация',
+            'title' => \t('useful'),
             'categories' => Repository::usefulCategories(),
             'articles' => Repository::usefulArticles($categoryId),
             'currentCategoryId' => $categoryId,
@@ -106,7 +106,7 @@ final class SiteController extends Controller
         }
 
         $this->view('site/order/form', [
-            'title' => 'Заявка на комбикорм',
+            'title' => \t('request'),
             'products' => Repository::products(null, true),
             'selectedProduct' => $selectedProduct,
             'errors' => [],
@@ -190,7 +190,7 @@ final class SiteController extends Controller
 
         if ($errors) {
             $this->view('site/order/form', [
-                'title' => 'Заявка на комбикорм',
+                'title' => \t('request'),
                 'products' => Repository::products(null, true),
                 'selectedProduct' => null,
                 'errors' => $errors,
@@ -215,13 +215,13 @@ final class SiteController extends Controller
 
     public function orderSuccess(): void
     {
-        $this->view('site/order/success', ['title' => 'Заявка отправлена']);
+        $this->view('site/order/success', ['title' => \current_lang() === 'en' ? 'Request sent' : 'Заявка отправлена']);
     }
 
     public function sitemap(): void
     {
         $this->view('site/sitemap', [
-            'title' => 'Карта сайта',
+            'title' => \t('site_map'),
             'categories' => Repository::categories(),
             'articles' => Repository::usefulArticles(),
         ]);

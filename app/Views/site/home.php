@@ -1,26 +1,26 @@
 <section class="hero">
     <div class="hero__content">
-        <p class="eyebrow">Производство гранулированных комбикормов</p>
+        <p class="eyebrow"><?= current_lang() === 'en' ? 'Pelleted feed production' : 'Производство гранулированных комбикормов' ?></p>
         <h1><?= e($page['title'] ?? 'АгроКорм — комбикормовый завод') ?></h1>
         <div class="lead"><?= $page['body'] ?? '<p>Современный завод по производству кормов для животноводческих хозяйств.</p>' ?></div>
         <div class="hero-actions">
-            <a class="button" href="<?= url('/products') ?>">Смотреть продукцию</a>
-            <a class="button button--outline" href="<?= url('/order') ?>">Составить заявку</a>
+            <a class="button" href="<?= url('/products') ?>"><?= e(t('catalog')) ?></a>
+            <a class="button button--outline" href="<?= url('/order') ?>"><?= e(t('request')) ?></a>
         </div>
     </div>
     <div class="hero__media">
         <img src="<?= asset(stock_image('hero')) ?>" alt="Поле зерновых культур">
         <div class="hero-panel">
             <strong>1–2 дня</strong>
-            <span>подбор рациона, фасовка и доставка партий</span>
+            <span><?= current_lang() === 'en' ? 'diet selection, packing and batch delivery' : 'подбор рациона, фасовка и доставка партий' ?></span>
         </div>
     </div>
 </section>
 
 <section class="section photo-story">
     <div class="section-head">
-        <h2>От поля до готового корма</h2>
-        <a href="<?= url('/about/production') ?>">О производстве →</a>
+        <h2><?= e(t('field_to_feed')) ?></h2>
+        <a href="<?= url('/about/production') ?>"><?= e(t('about_production')) ?></a>
     </div>
     <div class="photo-story__grid">
         <?php foreach (stock_gallery() as $index => $photo): ?>
@@ -37,8 +37,8 @@
 
 <section class="section">
     <div class="section-head">
-        <h2>Виды продукции</h2>
-        <a href="<?= url('/products') ?>">В каталог →</a>
+        <h2><?= e(t('product_types')) ?></h2>
+        <a href="<?= url('/products') ?>"><?= e(t('to_catalog')) ?></a>
     </div>
     <div class="slideshow" data-slideshow>
         <?php foreach (array_slice($products, 0, 4) as $i => $product): ?>
@@ -48,8 +48,8 @@
                     <span class="badge"><?= e($product['category_name']) ?></span>
                     <h3><?= e($product['title']) ?></h3>
                     <p><?= excerpt($product['description'], 160) ?></p>
-                    <p class="price">от <?= format_money($product['price']) ?> / <?= e($product['unit'] ?: 'кг') ?></p>
-                    <a href="<?= url('/products/' . $product['slug']) ?>">Подробнее →</a>
+                    <p class="price"><?= current_lang() === 'en' ? 'from ' : 'от ' ?><?= format_money($product['price']) ?> / <?= e($product['unit'] ?: 'кг') ?></p>
+                    <a href="<?= url('/products/' . $product['slug']) ?>"><?= e(t('read_more')) ?></a>
                 </div>
             </article>
         <?php endforeach; ?>
@@ -58,7 +58,7 @@
 </section>
 
 <section class="section">
-    <div class="section-head"><h2>Новости компании</h2><a href="<?= url('/news') ?>">Все новости →</a></div>
+    <div class="section-head"><h2><?= e(t('company_news')) ?></h2><a href="<?= url('/news') ?>"><?= e(t('all_news')) ?></a></div>
     <div class="home-news-grid">
         <?php foreach ($news as $item): ?>
             <article class="home-news-card">

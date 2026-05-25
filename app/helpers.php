@@ -37,6 +37,106 @@ function asset(string $path): string
     return url(ltrim($path, '/'));
 }
 
+function current_lang(): string
+{
+    $lang = (string)($_GET['lang'] ?? $_SESSION['lang'] ?? 'ru');
+    if (!in_array($lang, ['ru', 'en'], true)) {
+        $lang = 'ru';
+    }
+    $_SESSION['lang'] = $lang;
+    return $lang;
+}
+
+function lang_url(string $path = '', ?string $lang = null): string
+{
+    $lang ??= current_lang();
+    $url = url($path);
+    if ($lang === 'ru') {
+        return $url;
+    }
+    return $url . (str_contains($url, '?') ? '&' : '?') . 'lang=' . rawurlencode($lang);
+}
+
+function t(string $key): string
+{
+    $dict = [
+        'ru' => [
+            'home' => 'Главная',
+            'products' => 'Продукция',
+            'order' => 'Заявка',
+            'news' => 'Новости',
+            'about' => 'О компании',
+            'history' => 'История компании',
+            'certification' => 'Сертификация и научная поддержка',
+            'production' => 'Производство',
+            'useful' => 'Полезная информация',
+            'contacts' => 'Контакты',
+            'partners' => 'Наши партнеры',
+            'site_map' => 'Карта сайта',
+            'admin' => 'Раздел администратора',
+            'request' => 'Составить заявку',
+            'catalog' => 'Смотреть продукцию',
+            'product_types' => 'Виды продукции',
+            'to_catalog' => 'В каталог →',
+            'field_to_feed' => 'От поля до готового корма',
+            'about_production' => 'О производстве →',
+            'company_news' => 'Новости компании',
+            'all_news' => 'Все новости →',
+            'read_more' => 'Читать полностью →',
+            'articles' => 'Статьи',
+        ],
+        'en' => [
+            'home' => 'Home',
+            'products' => 'Products',
+            'order' => 'Order',
+            'news' => 'News',
+            'about' => 'About',
+            'history' => 'Company history',
+            'certification' => 'Certification and science',
+            'production' => 'Production',
+            'useful' => 'Useful information',
+            'contacts' => 'Contacts',
+            'partners' => 'Partners',
+            'site_map' => 'Site map',
+            'admin' => 'Admin panel',
+            'request' => 'Send request',
+            'catalog' => 'View products',
+            'product_types' => 'Product types',
+            'to_catalog' => 'Catalog →',
+            'field_to_feed' => 'From field to feed',
+            'about_production' => 'About production →',
+            'company_news' => 'Company news',
+            'all_news' => 'All news →',
+            'read_more' => 'Read more →',
+            'articles' => 'Articles',
+        ],
+    ];
+    $lang = current_lang();
+    return $dict[$lang][$key] ?? $dict['ru'][$key] ?? $key;
+}
+
+function localized(array $row, string $field): string
+{
+    $value = (string)($row[$field] ?? '');
+    if (current_lang() === 'en') {
+        $en = trim((string)($row[$field . '_en'] ?? ''));
+        if ($en !== '') {
+            return $en;
+        }
+    }
+    return $value;
+}
+
+function localize_row(array $row, array $fields): array
+{
+    foreach ($fields as $field) {
+        if (array_key_exists($field, $row)) {
+            $row[$field] = localized($row, $field);
+        }
+    }
+    return $row;
+}
+
 function stock_image(string $key): string
 {
     $images = [
@@ -70,6 +170,14 @@ function page_image(?string $slug): string
 
 function stock_gallery(): array
 {
+    if (current_lang() === 'en') {
+        return [
+            ['title' => 'Grain fields', 'text' => 'Diet raw materials start with grain control and stable supply.', 'image' => stock_image('field')],
+            ['title' => 'Grain and components', 'text' => 'Raw material batches are checked before grinding and mixing.', 'image' => stock_image('harvest')],
+            ['title' => 'Farms', 'text' => 'Feeds are selected for farm goals, age and animal productivity.', 'image' => stock_image('farm')],
+            ['title' => 'Finished products', 'text' => 'Packing and shipment are prepared for each customer request.', 'image' => stock_image('storage')],
+        ];
+    }
     return [
         ['title' => 'Поля зерновых', 'text' => 'Сырье для рационов начинается с контроля зерна и стабильных поставок.', 'image' => stock_image('field')],
         ['title' => 'Зерно и компоненты', 'text' => 'Партии сырья проверяются перед измельчением и смешиванием.', 'image' => stock_image('harvest')],
